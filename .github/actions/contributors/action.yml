@@ -8,26 +8,23 @@ inputs:
   github-token:
     required: true
     description: GitHub Token
-  project-path:
-    required: true
-    description: Path that points to the Unity project folder
+outputs:
+  content:
+    description: The JSON string containing build information.
+    value: ${{ steps.content.outputs.value }}
   
 runs:
   using: 'composite'
   steps:
-    - name: Install jq
-      run: sudo apt-get install jq
-      shell: sh
     - name: Get Contributors from API
       id: variables
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        echo "::set-output name=contributors::$(gh api /repos/BoundfoxStudios/community-project/contributors | jq --compact-output '[.[] | { user: .login, url: .url, contributions: .contributions }]')"
+        echo "::set-output name=contributors::$(gh api /repos/BoundfoxStudios/community-project/contributors | jq --compact-output '[.[] | { user: .login, url: .html_url, contributions: .contributions }]')"
       shell: sh
     - name: Write Build Manifest to JSON file
-      uses: DamianReeves/write-file-action@master
+      id: content
+      uses: mkungla/actions-set-text-output@v1
       with:
-        path: ${{ inputs.project-path }}/Assets/_Game/Build/contributors.json
-        write-mode: overwrite
-        contents: ${{ steps.variables.outputs.contributors }}
+        text: ${{ steps.variables.outputs.contributors }}
